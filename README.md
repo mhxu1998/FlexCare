@@ -13,4 +13,4 @@ Data preparation
 
 Model training
 ----
-python main_mt.py --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001 --model our_mmoe
+python main_mt.py --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001

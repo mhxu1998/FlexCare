@@ -9,7 +9,7 @@ This project was run in a conda virtual environment on Ubuntu 20.04 with CUDA 11
 
 Data preparation
 ----
-In [mimic4extract](mimic4extract/)
+In [mimic4extract](mimic4extract/README.md)
 
 Model training
 ----

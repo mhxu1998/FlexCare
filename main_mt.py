@@ -18,7 +18,7 @@ import datetime
 import random
 
 from torch.utils.data import Dataset, DataLoader
-from utils import Discretizer, Normalizer, my_metrics, is_ascending, read_timeseries
+from utils import Discretizer, Normalizer, my_metrics, is_ascending
 from dataset.dataloader import get_multimodal_datasets
 from mymodel.model import FlexCare
 
@@ -83,6 +83,18 @@ def pad_zeros(arr, min_length=None):
     return np.array(ret), seq_length
 
 
+def read_timeseries(path):
+    path = f'{args.ehr_path}/10002430_episode1_timeseries.csv'
+    ret = []
+    with open(path, "r") as tsfile:
+        header = tsfile.readline().strip().split(',')
+        assert header[0] == "Hours"
+        for line in tsfile:
+            mas = line.strip().split(',')
+            ret.append(np.array(mas))
+    return np.stack(ret)
+
+
 
 
 def main():
@@ -123,6 +135,13 @@ def main():
     best_test_aupr = 0
 
     val_record = [[] for i in range(len(args.task))]
+
+    if not os.path.exists('checkpoits'):
+        os.mkdir('checkpoits')
+
+    if not os.path.exists('log'):
+        os.mkdir('log')
+
 
     for epoch in tqdm(range(1, args.epochs+1)):
         print('Epoch:', epoch)

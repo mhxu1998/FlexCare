@@ -37,7 +37,7 @@ def temperature_scaled_softmax(logits, temperature=1.0, dim=0):
 
 
 class FlexCare(nn.Module):
-    def __init__(self, ehr_dim=76, num_classes=1, hidden_dim=128, batch_first=True, dropout=0.0, layers=1, device=torch.device('cpu')):
+    def __init__(self, ehr_dim=76, num_classes=1, hidden_dim=128, batch_first=True, dropout=0.0, layers=1, expert_k=5, device=torch.device('cpu')):
         super(FlexCare, self).__init__()
 
         self.device = device
@@ -71,7 +71,7 @@ class FlexCare(nn.Module):
         self.mm_cls_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
 
         # Moe
-        self.moe = MoE(hidden_dim, hidden_dim, hidden_dim, 10, hidden_dim, noisy_gating=True, k=2)
+        self.moe = MoE(hidden_dim, hidden_dim, hidden_dim, 10, hidden_dim, noisy_gating=True, k=expert_k)
 
         self.mm_choose = nn.Linear(hidden_dim*2, hidden_dim, bias=False)
         self.mm_choose2 = nn.Linear(hidden_dim, 1, bias=False)

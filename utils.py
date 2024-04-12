@@ -19,23 +19,10 @@ def is_ascending(lst):
     return 1  # 列表是升序的情况下返回1
 
 
-def read_timeseries(path):
-    path = f'{args.ehr_path}/10002430_episode1_timeseries.csv'
-    ret = []
-    with open(path, "r") as tsfile:
-        header = tsfile.readline().strip().split(',')
-        assert header[0] == "Hours"
-        for line in tsfile:
-            mas = line.strip().split(',')
-            ret.append(np.array(mas))
-    return np.stack(ret)
-
-
-
 
 class Discretizer:
     def __init__(self, timestep=0.8, store_masks=True, impute_strategy='zero', start_time='zero',
-                 config_path= 'ehr_utils/resources/discretizer_config.json'):
+                 config_path= 'normalizers/discretizer_config.json'):
 
         with open(config_path) as f:
             config = json.load(f)

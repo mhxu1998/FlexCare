@@ -8,12 +8,14 @@ def args_parser():
     parser.add_argument('--ehr_path', type=str, help='Path to the ehr data',
                         default='data/ehr')
     parser.add_argument('--cxr_path', type=str, help='Path to the cxr data',
-                        default='../data/mimic-cxr-jpg')
-    parser.add_argument('--save_dir', type=str, help='Directory relative which all output files are stored',
-                    default='checkpoints')
+                        default='data/cxr')
 
+    parser.add_argument('--timestep', type=float, default=1.0, help="fixed timestep used in the dataset")
+    parser.add_argument('--normalizer_state', type=str, default=None, help='Path to a state file of a normalizer. Leave none if you want to use one of the provided ones.')
+    parser.add_argument('--resize', default=256, type=int, help='number of epochs to train')
+    parser.add_argument('--crop', default=224, type=int, help='number of epochs to train')
 
-    parser.add_argument('--task', type=str, default='phenotyping', help='train or eval for in-hospital-mortality or phenotyping, decompensation, length-of-stay')
+    parser.add_argument('--task', type=str, default='phenotyping', help='in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis')
     parser.add_argument('--epochs', type=int, default=100, help='number of chunks to train')
     parser.add_argument('--device', type=str, default="cpu", help='cuda:number or cpu')
     parser.add_argument('--num_workers', type=int, default=8, help='num_workers for dataloader')

@@ -20,7 +20,7 @@ def process_diagnosis_with_multimodal(args, eps=1e-6):
     cxr_labelfile = os.path.join(args.cxr_path, 'mimic-cxr-2.0.0-chexpert.csv')
     note_file = os.path.join(args.note_path, 'note_all.csv')
     all_stayfile = os.path.join(args.root_path, 'all_stays.csv')
-    admissions_file = os.path.join(args.root_path, 'admissions.csv')
+    admissions_file = os.path.join(args.mimic4_path, 'hosp/admissions.csv')
 
     cxr_metadata = pd.read_csv(cxr_metafile)
     cxr_label = pd.read_csv(cxr_labelfile)
@@ -119,6 +119,7 @@ def process_diagnosis_with_multimodal(args, eps=1e-6):
 
 def main():
     parser = argparse.ArgumentParser(description="Create data for in-hospital mortality prediction task.")
+    parser.add_argument('mimic4_path', type=str, help="Path to mimic4 folder.")
     parser.add_argument('root_path', type=str, help="Path to root folder.")
     parser.add_argument('ehr_path', type=str, help="Path to time series data folder.")
     parser.add_argument('cxr_path', type=str, help="Path to cxr data folder.")

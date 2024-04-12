@@ -6,8 +6,7 @@ import os
 import sys
 from tqdm import tqdm
 
-from mimic4extract.subject import read_stays, read_diagnoses, read_events, get_events_for_stay,\
-    add_hours_elpased_to_events
+from mimic4extract.subject import read_stays, read_diagnoses, read_events, get_events_for_stay, add_hours_elpased_to_events
 from mimic4extract.subject import convert_events_to_timeseries, get_first_valid_from_timeseries
 from mimic4extract.preprocessing import read_itemid_to_variable_map, map_itemids_to_variables, clean_events
 from mimic4extract.preprocessing import assemble_episodic_data
@@ -15,12 +14,8 @@ from mimic4extract.preprocessing import assemble_episodic_data
 
 parser = argparse.ArgumentParser(description='Extract episodes from per-subject data.')
 parser.add_argument('subjects_root_path', type=str, help='Directory containing subject sub-directories.')
-parser.add_argument('--variable_map_file', type=str,
-                    default=os.path.join(os.path.dirname(__file__), '../resources/itemid_to_variable_map.csv'),
-                    help='CSV containing ITEMID-to-variable map.')
-parser.add_argument('--reference_range_file', type=str,
-                    default=os.path.join(os.path.dirname(__file__), '../resources/variable_ranges.csv'),
-                    help='CSV containing reference ranges for variables.')
+parser.add_argument('--variable_map_file', type=str, default=os.path.join(os.path.dirname(__file__), '../resources/itemid_to_variable_map.csv'), help='CSV containing ITEMID-to-variable map.')
+parser.add_argument('--reference_range_file', type=str, default=os.path.join(os.path.dirname(__file__), '../resources/variable_ranges.csv'), help='CSV containing reference ranges for variables.')
 args, _ = parser.parse_known_args()
 
 var_map = read_itemid_to_variable_map(args.variable_map_file)

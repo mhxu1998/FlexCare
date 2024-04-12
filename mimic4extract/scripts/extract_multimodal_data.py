@@ -7,7 +7,7 @@ import pandas as pd
 import random
 random.seed(42)
 from tqdm import tqdm
-from mimic4extract.scripts.utils import split_train_val_test_id
+from mimic4extract.scripts.utils import split_train_val_test_id,process_note
 
 
 def extract_time_series(args, eps=1e-6):
@@ -43,16 +43,26 @@ def extract_time_series(args, eps=1e-6):
 
 def main():
     parser = argparse.ArgumentParser(description="Extract multimodal data for patients.")
+    parser.add_argument('mimic4_path', type=str, help='Directory containing MIMIC-IV CSV files.')
+    parser.add_argument('mimic_note_path', type=str, help='Directory containing MIMIC-NOTE CSV files.')
     parser.add_argument('root_path', type=str, help="Path to root folder patient information.")
     parser.add_argument('ehr_path', type=str, help="Directory where the time series data should be stored.")
-    parser.add_argument('mimic4_path', type=str, help='Directory containing MIMIC-IV CSV files.')
+    parser.add_argument('note_path', type=str, help="Directory where the note data should be stored.")
     args, _ = parser.parse_known_args()
 
     if not os.path.exists(args.ehr_path):
         os.makedirs(args.ehr_path)
 
+    # Create the folder and move time series files into it, e.g., data/ehr
+    print('create directory to store time series data')
     extract_time_series(args)
 
+    # Extract required data from raw MIMIC-NOTE
+    print('extract required data from raw MIMIC-NOTE')
+    process_note(args.mimic_note_path, args.note_path)
+
+    # split all patients into train/val/test sets
+    print('split all patients into train/val/test sets')
     admissions = pd.read_csv(f'{args.mimic4_path}/hosp/admissions.csv')
     split_train_val_test_id(admissions)
 

@@ -12,13 +12,9 @@ from mimic4extract.util import dataframe_from_csv
 parser = argparse.ArgumentParser(description='Extract per-subject data from MIMIC-IV CSV files.')
 parser.add_argument('mimic4_path', type=str, help='Directory containing MIMIC-IV CSV files.')
 parser.add_argument('output_path', type=str, help='Directory where per-subject data should be written.')
-parser.add_argument('--event_tables', '-e', type=str, nargs='+', help='Tables from which to read events.',
-                    default=['OUTPUTEVENTS', 'CHARTEVENTS', 'LABEVENTS'])
-parser.add_argument('--phenotype_definitions', '-p', type=str,
-                    default=os.path.join(os.path.dirname(__file__), '../resources/icd_9_10_definitions_2.yaml'),
-                    help='YAML file with phenotype definitions.')
-parser.add_argument('--itemids_file', '-i', type=str,default=os.path.join(os.path.dirname(__file__), '../resources/itemid_to_variable_map.csv'),
-                    help='CSV containing list of ITEMIDs to keep.')
+parser.add_argument('--event_tables', '-e', type=str, nargs='+', help='Tables from which to read events.', default=['OUTPUTEVENTS', 'CHARTEVENTS', 'LABEVENTS'])
+parser.add_argument('--phenotype_definitions', '-p', type=str, default=os.path.join(os.path.dirname(__file__), '../resources/icd_9_10_definitions_2.yaml'), help='YAML file with phenotype definitions.')
+parser.add_argument('--itemids_file', '-i', type=str, default=os.path.join(os.path.dirname(__file__), '../resources/itemid_to_variable_map.csv'), help='CSV containing list of ITEMIDs to keep.')
 parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', help='Verbosity in output')
 parser.add_argument('--quiet', '-q', dest='verbose', action='store_false', help='Suspend printing of details')
 parser.set_defaults(verbose=True)

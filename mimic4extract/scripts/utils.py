@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 import random
+import re
+import string
 
 
 def merge_multimodal_data(args, task):
@@ -73,8 +75,127 @@ def merge_multimodal_data(args, task):
 
     all_merged.to_csv(os.path.join(args.output_path, 'multimodal_listfile.csv'), index=False)
 
-
     return all_merged
+
+
+# Remove symbols and line breaks from text
+def remove_symbol(text):
+    text = text.replace('\n', '')
+
+    punctuation_string = string.punctuation
+    for i in punctuation_string:
+        text = text.replace(i, '')
+
+    return text
+
+
+# extract Brief Hospital Course in the discharge summary
+def extract_BHC(text):
+    text = text.lower()
+
+    # using regular expression to extract the content
+    pattern1 = re.compile(r"brief hospital course:(.*?)medications on admission", re.DOTALL)
+    pattern2 = re.compile(r"brief Hospital Course:(.*?)discharge medications", re.DOTALL)
+
+    if "brief hospital course:" in text:
+        if re.search(pattern1, text):
+            match = re.search(pattern1, text).group(1).strip()
+        elif re.search(pattern2, text):
+            match = re.search(pattern2, text).group(1).strip()
+        else:
+            match = None
+    else:
+        match = None
+
+    if match is not None:
+        match = remove_symbol(match)
+
+    return match
+
+
+# extract Chief Complaint in the discharge summary
+def extract_CC(text):
+    text = text.lower()
+
+    # using regular expression to extract the content
+    pattern = re.compile(r"chief complaint:(.*?)major surgical or invasive procedure", re.DOTALL)
+
+    if "chief complaint:" in text:
+        if re.search(pattern, text):
+            match = re.search(pattern, text).group(1).strip()
+        else:
+            match = None
+    else:
+        match = None
+
+    if match is not None:
+        match = remove_symbol(match)
+
+    return match
+
+
+# extract Past Medical History in the discharge summary
+def extract_PMH(text):
+    text = text.lower()
+
+    # using regular expression to extract the content
+    pattern = re.compile(r"past medical history:(.*?)social history", re.DOTALL)
+
+    if "past medical history:" in text:
+        if re.search(pattern, text):
+            match = re.search(pattern, text).group(1).strip()
+        else:
+            match = None
+    else:
+        match = None
+
+    if match is not None:
+        match = remove_symbol(match)
+
+    return match
+
+
+# extract Medications on Admission in the discharge summary
+def extract_MA(text):
+    text = text.lower()
+
+    # using regular expression to extract the content
+    pattern = re.compile(r"medications on admission:(.*?)discharge medications", re.DOTALL)
+
+    if "medications on admission:" in text:
+        if re.search(pattern, text):
+            match = re.search(pattern, text).group(1).strip()
+        else:
+            match = None
+    else:
+        match = None
+
+    if match is not None:
+        match = remove_symbol(match)
+
+    return match
+
+
+# Extract required data from raw MIMIC-NOTE
+def process_note(note_path, output_path):
+    new_df = pd.read_csv(os.path.join(note_path, 'note/discharge.csv'))
+
+    # Extract Brief Hospital Course part as the overall admission summary (For DRG task)
+    new_df['brief_hospital_course'] = new_df['text'].apply(extract_BHC)
+
+    # Extract Past Medical History  (For 6 tasks)
+    new_df['past_medical_history'] = new_df['text'].apply(extract_PMH)
+
+    # Extract Chief Complaint and Medications on Admission
+    # new_df['chief_complaint'] = new_df['text'].apply(extract_CC)
+    # new_df['medications_on_admission'] = new_df['text'].apply(extract_MA)
+
+    new_df.drop(['text', 'note_id', 'note_type', 'note_seq'], axis=1, inplace=True)
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    new_df.to_csv(os.path.join(output_path, 'note_all.csv'), index=False)
 
 
 # split all patients into train/val/test sets

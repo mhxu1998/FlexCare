@@ -17,9 +17,9 @@ You will first need to request access for MIMIC dataset:
 + MIMIC-CXR-JPG 2.0.0
 + MIMIC-IV-NOTE 2.2
 
-Then follow the steps in [mimic4extract](mimic4extract/README.md) to build datasets for all tasks.
+Then follow the steps in [mimic4extract](mimic4extract/README.md) to build datasets for all tasks in directory [data].
 
-In addition, we use _biobert-base-cased-v1.2_ as the pretrained text encoder, please download files in https://huggingface.co/dmis-lab/biobert-base-cased-v1.2, and put them into the folder [mymodel/pretrained]
+In addition, we use _biobert-base-cased-v1.2_ as the pretrained text encoder, please download files in https://huggingface.co/dmis-lab/biobert-base-cased-v1.2, and put them into the directory [mymodel/pretrained]
 
 Model training
 ----

@@ -136,8 +136,8 @@ def main():
 
     val_record = [[] for i in range(len(args.task))]
 
-    if not os.path.exists('checkpoits'):
-        os.mkdir('checkpoits')
+    if not os.path.exists('checkpoints'):
+        os.mkdir('checkpoints')
 
     if not os.path.exists('log'):
         os.mkdir('log')

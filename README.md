@@ -23,6 +23,6 @@ In addition, we use _biobert-base-cased-v1.2_ as the pretrained text encoder, pl
 
 Model training
 ----
-```python
+``
 python main_mt.py --data_path data --ehr_path data/ehr --cxr_path data/cxr --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001 --device {gpu id} --seed 40
-```
+``

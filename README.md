@@ -1,4 +1,4 @@
-# FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction
+# FlexCare
 Source code for ***FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction*** published in KDD 2024.
 
 Requirements

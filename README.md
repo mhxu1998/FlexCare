@@ -1,9 +1,11 @@
 # FlexCare
 Source code for ***FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction*** published in KDD 2024.
 
+![image](pic/framework.png)
+
 Requirements
 ----
-This project was run in a conda virtual environment on Ubuntu 20.04 with CUDA 11.1. 
+This project is run in a conda virtual environment on Ubuntu 20.04 with CUDA 11.1. 
 + torch==1.10.1+cu111
 + Python==3.7.9
 + transformers==4.30.2
@@ -24,5 +26,5 @@ In addition, we use _biobert-base-cased-v1.2_ as the pretrained text encoder, pl
 Model training
 ----
 ``
-python main_mt.py --data_path data --ehr_path data/ehr --cxr_path data/cxr --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001 --device {gpu id} --seed 40
+python main_mt.py --data_path data --ehr_path data/ehr --cxr_path data/cxr --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001 --device {gpu id} --seed {40,42,44,46,48}
 ``

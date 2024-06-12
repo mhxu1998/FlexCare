@@ -21,10 +21,10 @@ def merge_multimodal_data(args, task):
 
     columns = ['stay_id', 'intime', 'outtime']
 
-    # EHR数据和Stay数据合并，获取出入时间
+    # Merge EHR time series data and icustay
     ehr_merged_icustays = ehr_list.merge(icu_stay_metadata[columns], how='inner', on='stay_id')
 
-    # 根据不同任务确定时间范围 intime endtime
+    # Determine different time ranges for different tasks (intime/endtime)
     ehr_merged_icustays.intime = pd.to_datetime(ehr_merged_icustays.intime)
     ehr_merged_icustays.outtime = pd.to_datetime(ehr_merged_icustays.outtime)
     if task == 'in-hospital-mortality':
@@ -36,7 +36,7 @@ def merge_multimodal_data(args, task):
     else:
         ehr_merged_icustays['endtime'] = ehr_merged_icustays.outtime
 
-    # EHR数据和CXR数据合并，获取对应jpg文件名及时间戳
+    # Merge EHR time series and CXR. Obtain the corresponding jpg filename and timestamp
     ehr_cxr_merged = ehr_merged_icustays.merge(cxr_metadata, how='inner', on='subject_id')
     ehr_cxr_merged['StudyTime'] = ehr_cxr_merged['StudyTime'].apply(lambda x: f'{int(float(x)):06}')
     ehr_cxr_merged['StudyDateTime'] = pd.to_datetime(
@@ -44,27 +44,27 @@ def merge_multimodal_data(args, task):
 
     end_time = ehr_cxr_merged.endtime
 
-    # 删除时间范围不符合的EHR-CXR样本对
+    # Delete the EHR-CXR pairs that do not match the time range
     ehr_cxr_merged_during = ehr_cxr_merged.loc[
         (ehr_cxr_merged.StudyDateTime >= ehr_cxr_merged.intime) & ((ehr_cxr_merged.StudyDateTime <= end_time))]
 
-    # 选择AP类型CXR
+    # Select CXR of the AP type
     ehr_cxr_merged_AP = ehr_cxr_merged_during[ehr_cxr_merged_during['ViewPosition'] == 'AP']
 
-    # 同一样本选择时间范围内最后一次CXR
+    # Select the last CXR of the sample
     ehr_cxr_merged_sorted = ehr_cxr_merged_AP.sort_values(by=['time_series', 'period_length', 'StudyDateTime'],
                                                           ascending=[True, True, True])
     ehr_cxr_merged_final = ehr_cxr_merged_sorted.drop_duplicates(subset=['time_series', 'period_length'], keep='last')
 
-    # 和原始EHR合并，部分样本无CXR模态
+    # Merged with the original EHR to obtain the full dataset of partially CXR-free modality
     all_merged = ehr_list.merge(ehr_cxr_merged_final[['time_series', 'period_length', 'dicom_id']], how='outer',
                                 on=['time_series', 'period_length'])
 
-    # Note合并
+    # Merge Note data and icustay
     note_stay = icu_stay_metadata[['subject_id', 'hadm_id', 'stay_id']].merge(note, how='inner', on=['subject_id', 'hadm_id'])
     all_merged = all_merged.merge(note_stay[['stay_id','past_medical_history']], how='left', on='stay_id')
 
-    # 调整列顺序
+    # Adjust column order
     df_id = all_merged.dicom_id
     all_merged = all_merged.drop('dicom_id', axis=1)
     all_merged.insert(4, 'dicom_id', df_id)

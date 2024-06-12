@@ -24,6 +24,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 cache_dir = "mymodel/pretrained/biobert-base-cased-v1.2"
 
 
+# Tokens decorrelation loss
 def calculate_ortho_loss(input_vec):
     x = input_vec - torch.mean(input_vec, axis=2).unsqueeze(2).repeat(1, 1, input_vec.shape[2])
     cov_matrix = torch.matmul(x, x.transpose(1, 2)) / (x.shape[2] - 1)
@@ -37,7 +38,7 @@ def temperature_scaled_softmax(logits, temperature=1.0, dim=0):
 
 
 class FlexCare(nn.Module):
-    def __init__(self, ehr_dim=76, num_classes=1, hidden_dim=128, batch_first=True, dropout=0.0, layers=1, expert_k=5, device=torch.device('cpu')):
+    def __init__(self, ehr_dim=76, num_classes=1, hidden_dim=128, batch_first=True, dropout=0.0, layers=4, expert_k=2, expert_total=10, device=torch.device('cpu')):
         super(FlexCare, self).__init__()
 
         self.device = device
@@ -67,27 +68,25 @@ class FlexCare(nn.Module):
 
         # Multimodal Transformer
         self.encoder_layer_fusion = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=2, dim_feedforward=hidden_dim*4)
-        self.transformer_fusion = nn.TransformerEncoder(self.encoder_layer_fusion, num_layers=4)
+        self.transformer_fusion = nn.TransformerEncoder(self.encoder_layer_fusion, num_layers=layers)
         self.mm_cls_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
 
         # Moe
-        self.moe = MoE(hidden_dim, hidden_dim, hidden_dim, 10, hidden_dim, noisy_gating=True, k=expert_k)
+        self.moe = MoE(hidden_dim, hidden_dim, hidden_dim, expert_total, hidden_dim, noisy_gating=True, k=expert_k)
 
         self.mm_choose = nn.Linear(hidden_dim*2, hidden_dim, bias=False)
         self.mm_choose2 = nn.Linear(hidden_dim, 1, bias=False)
 
         self.mm_layernorm = nn.LayerNorm(hidden_dim)
 
-        self.n = 2
-
         # Specific classifier
-        self.dense_layer_mortality = nn.Linear(hidden_dim*self.n, 1)
-        self.dense_layer_decomp = nn.Linear(hidden_dim*self.n, 1)
-        self.dense_layer_ph = nn.Linear(hidden_dim*self.n, 25)
-        self.dense_layer_los = nn.Linear(hidden_dim*self.n, 10)
-        self.dense_layer_readm = nn.Linear(hidden_dim*self.n, 1)
-        self.dense_layer_diag = nn.Linear(hidden_dim*self.n, 14)
-        # self.dense_layer_drg = nn.Linear(hidden_dim, 769)
+        self.dense_layer_mortality = nn.Linear(hidden_dim*2, 1)
+        self.dense_layer_decomp = nn.Linear(hidden_dim*2, 1)
+        self.dense_layer_ph = nn.Linear(hidden_dim*2, 25)
+        self.dense_layer_los = nn.Linear(hidden_dim*2, 10)
+        self.dense_layer_readm = nn.Linear(hidden_dim*2, 1)
+        self.dense_layer_diag = nn.Linear(hidden_dim*2, 14)
+        self.dense_layer_drg = nn.Linear(hidden_dim, 769)
 
     def forward(self, ehr, ehr_lengths, use_ehr, img, use_img, note, use_note, task_index):
         task_embed = self.task_embedding(task_index).unsqueeze(1)
@@ -153,6 +152,7 @@ class FlexCare(nn.Module):
         ehr_cls_index = 5
         cxr_cls_index = ehr_cls_index + ehr_embed.shape[1]
         note_cls_index = cxr_cls_index + cxr_embed.shape[1]
+        # Mask that enables modality combination tokens to precisely target information relevant to diverse modality combination patterns
         cross_cls_mask = generate_cross_modal_mask(ehr_cls_index, cxr_cls_index, note_cls_index, multimodal_embed.shape[1]).to(self.device)
 
         multimodal_embed = torch.transpose(multimodal_embed, 0, 1)
@@ -161,6 +161,7 @@ class FlexCare(nn.Module):
 
         task_mm_embed = fusion_embed[:, 0]
         mm_embed = torch.cat((fusion_embed[:, 1:ehr_cls_index], fusion_embed[:, ehr_cls_index].unsqueeze(1), fusion_embed[:, cxr_cls_index].unsqueeze(1), fusion_embed[:, note_cls_index].unsqueeze(1)), dim=1)
+        # Mask that indicates which modality combination tokens are missing
         mm_mask = torch.ones(mm_embed.shape[0], mm_embed.shape[1]).to(self.device)
         mm_mask[:, 0] = ehr_pad_mask[:, 0] | cxr_pad_mask[:, 0] | note_pad_mask[:, 0]
         mm_mask[:, 1] = ehr_pad_mask[:, 0] | cxr_pad_mask[:, 0]
@@ -183,7 +184,7 @@ class FlexCare(nn.Module):
 
         weighted_mm = (mm_moe * weight.unsqueeze(2).repeat(1, 1, mm_moe.shape[-1])).sum(dim=1)
 
-        final_mm_embed = torch.cat((task_mm_embed, self.mm_layernorm(weighted_mm)),1)       # self.mm_layernorm(weighted_mm)
+        final_mm_embed = torch.cat((task_mm_embed, self.mm_layernorm(weighted_mm)),1)
 
 
         if task_index[0] == 0:

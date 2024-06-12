@@ -64,19 +64,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-
-# import pandas as pd
-# import numpy as np
-# # # initialise data of lists.
-# split = np.zeros(len(folders))
-# test_inds = np.random.permutation(len(folders))[:int((20*len(folders)) / 100)]
-# split[test_inds] = 1
-# data = {'subject_id':folders, 'test':split.astype(int).tolist()}
- 
-# # # Create DataFrame
-# df = pd.DataFrame(data)
-
-# path = os.path.join(os.path.dirname(__file__), '../resources/testset_iv.csv')
-
-# # df.to_csv(path)
-# df.to_csv(path, header=False, index=False)

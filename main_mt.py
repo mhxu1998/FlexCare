@@ -96,7 +96,6 @@ def read_timeseries(path):
 
 
 
-
 def main():
     # Time series data discretization
     discretizer = Discretizer(timestep=float(args.timestep), store_masks=True, impute_strategy='previous', start_time='zero')
@@ -120,7 +119,7 @@ def main():
         mutli_val_dl.append(DataLoader(val_ds, args.batch_size, shuffle=True, collate_fn=my_collate, pin_memory=True, num_workers=num_workers, drop_last=False))
         mutli_test_dl.append(DataLoader(test_ds, args.batch_size, shuffle=True, collate_fn=my_collate, pin_memory=True, num_workers=num_workers, drop_last=False))
 
-    model = FlexCare(hidden_dim=args.hidden_dim, device=device).to(device)
+    model = FlexCare(hidden_dim=args.hidden_dim, layers=4, expert_k=2, expert_total=10, device=device).to(device)
 
     criterion = torch.nn.BCELoss()
     criterion_ce = torch.nn.CrossEntropyLoss()
@@ -142,7 +141,6 @@ def main():
     if not os.path.exists('log'):
         os.mkdir('log')
 
-
     for epoch in tqdm(range(1, args.epochs+1)):
         print('Epoch:', epoch)
         # Train
@@ -155,13 +153,14 @@ def main():
             task_now = args.task[t]
             print('Task:', task_now, ' Training!')
 
-            if 'our' in args.model and len(args.task) > 1:
+            if len(args.task) > 1:
                 optimizer.param_groups[0]['lr'] = multi_lr[t]
 
             with tqdm(mutli_train_dl[t], position=0, ncols=150, colour='#666666') as tqdm_range:
                 for i, data in enumerate(tqdm_range):
-                    if task_now == 'drg' and i>len(mutli_train_dl[t])/100:
-                        break
+                    params = list(model.named_parameters())
+                    print(params.__len__())
+                    print(params[1])
 
                     optimizer.zero_grad()
                     ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, label, task_index = data
@@ -172,7 +171,6 @@ def main():
                     mask_note = torch.from_numpy(mask_note).long().to(device)
                     y_true = torch.from_numpy(label).float().to(device)
                     task_index = torch.from_numpy(task_index).long().to(device)
-
                     y_pred = model(ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, task_index)
 
                     # Choose loss function based on the task
@@ -281,6 +279,7 @@ def main():
             if valid_res > best_valid_res:
                 best_epoch = epoch
                 best_valid_res = valid_res
+                torch.save(model.state_dict(), 'checkpoints/' + file_path[3:-4] + '.pt')
 
             for i in range(len(val_record)):
                 if (len(val_record[i]) < adjust_step):
@@ -289,83 +288,74 @@ def main():
                     if is_ascending(val_record[i][-adjust_step:]):
                         multi_lr[i] = multi_lr[i]/2
 
-            # Test
-            test_loss = 0
-            test_auc = []
-            test_aupr = []
-            for t in range(len(mutli_test_dl)):
-                task_now = args.task[t]
-                if task_now == 'drg':
-                    break
-                with tqdm(mutli_test_dl[t], position=0, ncols=150, colour='#666666') as tqdm_range:
-                    outGT = torch.FloatTensor().to(device)
-                    outPRED = torch.FloatTensor().to(device)
-                    for i, data in enumerate(tqdm_range):
-                        ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, label, task_index = data
-                        ehr = torch.from_numpy(ehr).float().to(device)
-                        cxr = cxr.to(device)
-                        mask_ehr = torch.from_numpy(mask_ehr).long().to(device)
-                        mask_cxr = torch.from_numpy(mask_cxr).long().to(device)
-                        mask_note = torch.from_numpy(mask_note).long().to(device)
-                        y_true = torch.from_numpy(label).float().to(device)
-                        task_index = torch.from_numpy(task_index).long().to(device)
-
-                        y_pred = model(ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, task_index)
-
-                        # Choose loss function based on the task
-                        if task_now in ['length-of-stay','drg']:
-                            criterion_now = criterion_ce
-                            y_true = y_true.long().view(-1)
-                        else:
-                            criterion_now = criterion
-
-                        y_pred = y_pred.reshape(ehr.shape[0], -1)
-                        if task_now == 'diagnosis':
-                            label_mask = (y_true > -1)
-                            y_pred2 = y_pred.clone()
-                            y_true2 = y_true.clone()
-                            y_pred = y_pred[label_mask]
-                            y_true = y_true[label_mask]
-                            loss = criterion_now(y_pred, y_true)
-                            y_pred = y_pred2
-                            y_true = y_true2
-                        else:
-                            loss = criterion_now(y_pred, y_true)
-
-                        test_loss += loss.item()
-
-                        if task_now in ['length-of-stay','drg']:
-                            _, y_pred = torch.max(y_pred, dim=1)
-
-                        outPRED = torch.cat((outPRED, y_pred), 0)
-                        outGT = torch.cat((outGT, y_true), 0)
-
-                auc, aupr = my_metrics(outGT, outPRED, task_now)
-                test_auc.append(auc)
-                test_aupr.append(aupr)
-                print('Task: ', task_now, ' Test AUC:', auc, '   AUPR:', aupr)
-
-                with open(file_path, "a", encoding='utf-8') as f:
-                    f.write('Task: '+task_now+' Test AUC:'+str(auc)+'   AUPR:'+str(aupr) + '\n')
-
-            print('Test loss:', test_loss)
-            with open(file_path, "a", encoding='utf-8') as f:
-                f.write('Test loss:' + str(test_loss)+'\n')
-
-            if best_epoch == epoch:
-                best_test_auc = test_auc
-                best_test_aupr = test_aupr
-                if 'our' in args.model or 'drg' in args.task:
-                    torch.save(model.state_dict(), 'checkpoints/'+file_path[3:-4]+'.pt')
-
-    print('Best Epoch:', best_epoch)
-    print('Best AUC:', best_test_auc, '     AUPR:', best_test_aupr)
-
+    print('Best Epoch: ', best_epoch)
+    print('Best Val Res: ', best_valid_res)
     with open(file_path, "a", encoding='utf-8') as f:
         f.write('Best Epoch:' + str(best_epoch) + '  Best Val Res:' + str(best_valid_res) + '\n')
+
+    # Test
+    with torch.no_grad():
+        model_path = 'checkpoints/' + str(file_path[3:-4]) + '.pt'
+        state_dict = torch.load(model_path, map_location=device)
+        model.load_state_dict(state_dict)
+
+        model.eval()
+        test_loss = 0
+        test_auc = []
+        test_aupr = []
         for t in range(len(mutli_test_dl)):
             task_now = args.task[t]
-            f.write('Task: ' + task_now + ' Best AUC:' + str(best_test_auc[t]) + '   AUPR:' + str(best_test_aupr[t]) + '\n')
+            with tqdm(mutli_test_dl[t], position=0, ncols=150, colour='#666666') as tqdm_range:
+                outGT = torch.FloatTensor().to(device)
+                outPRED = torch.FloatTensor().to(device)
+                for i, data in enumerate(tqdm_range):
+                    ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, label, task_index = data
+                    ehr = torch.from_numpy(ehr).float().to(device)
+                    cxr = cxr.to(device)
+                    mask_ehr = torch.from_numpy(mask_ehr).long().to(device)
+                    mask_cxr = torch.from_numpy(mask_cxr).long().to(device)
+                    mask_note = torch.from_numpy(mask_note).long().to(device)
+                    y_true = torch.from_numpy(label).float().to(device)
+                    task_index = torch.from_numpy(task_index).long().to(device)
+
+                    y_pred = model(ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, task_index)
+
+                    # Choose loss function based on the task
+                    if task_now in ['length-of-stay','drg']:
+                        criterion_now = criterion_ce
+                        y_true = y_true.long().view(-1)
+                    else:
+                        criterion_now = criterion
+
+                    y_pred = y_pred.reshape(ehr.shape[0], -1)
+                    if task_now == 'diagnosis':
+                        label_mask = (y_true > -1)
+                        y_pred2 = y_pred.clone()
+                        y_true2 = y_true.clone()
+                        y_pred = y_pred[label_mask]
+                        y_true = y_true[label_mask]
+                        loss = criterion_now(y_pred, y_true)
+                        y_pred = y_pred2
+                        y_true = y_true2
+                    else:
+                        loss = criterion_now(y_pred, y_true)
+
+                    test_loss += loss.item()
+
+                    if task_now in ['length-of-stay','drg']:
+                        _, y_pred = torch.max(y_pred, dim=1)
+
+                    outPRED = torch.cat((outPRED, y_pred), 0)
+                    outGT = torch.cat((outGT, y_true), 0)
+
+            auc, aupr = my_metrics(outGT, outPRED, task_now)
+            test_auc.append(auc)
+            test_aupr.append(aupr)
+            print('Task: ', task_now, ' Test AUC:', auc, '   AUPR:', aupr)
+
+            with open(file_path, "a", encoding='utf-8') as f:
+                f.write('Task: '+task_now+' Test AUC:'+str(auc)+'   AUPR:'+str(aupr) + '\n')
+
 
 if __name__ == '__main__':
     main()

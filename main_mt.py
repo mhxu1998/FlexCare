@@ -158,10 +158,6 @@ def main():
 
             with tqdm(mutli_train_dl[t], position=0, ncols=150, colour='#666666') as tqdm_range:
                 for i, data in enumerate(tqdm_range):
-                    params = list(model.named_parameters())
-                    print(params.__len__())
-                    print(params[1])
-
                     optimizer.zero_grad()
                     ehr, ehr_length, mask_ehr, cxr, mask_cxr, note, mask_note, label, task_index = data
                     ehr = torch.from_numpy(ehr).float().to(device)

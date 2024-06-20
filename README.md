@@ -1,6 +1,8 @@
 # FlexCare
 Source code for ***FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction*** published in KDD 2024.
 
+📄 <a href="https://arxiv.org/abs/2406.11928" target="_blank">arXiv</a>
+
 ![image](pic/framework.png)
 
 Requirements
@@ -15,9 +17,9 @@ This project is run in a conda virtual environment on Ubuntu 20.04 with CUDA 11.
 Data preparation
 ----
 You will first need to request access for MIMIC dataset:
-+ MIMIC-IV 2.0
-+ MIMIC-CXR-JPG 2.0.0
-+ MIMIC-IV-NOTE 2.2
++ MIMIC-IV 2.0 https://physionet.org/content/mimiciv/2.0/
++ MIMIC-CXR-JPG 2.0.0 https://physionet.org/content/mimic-cxr-jpg/2.0.0/
++ MIMIC-IV-NOTE 2.2 https://physionet.org/content/mimic-iv-note/2.2/
 
 Then follow the steps in [mimic4extract](mimic4extract/README.md) to build datasets for all tasks in directory [data].
 

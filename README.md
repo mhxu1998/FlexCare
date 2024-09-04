@@ -1,7 +1,7 @@
 # FlexCare
 Source code for ***FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction*** published in KDD 2024.
 
-📄Preprint is available here: <a href="https://arxiv.org/abs/2406.11928" target="_blank">arXiv</a>
+📄Paper is available at: <a href="https://arxiv.org/abs/2406.11928" target="_blank">ACM DL</a> or <a href="https://arxiv.org/abs/2406.11928" target="_blank">arXiv</a>
 
 ![image](pic/framework.png)
 
@@ -30,3 +30,15 @@ Model training
 ``
 python main_mt.py --data_path data --ehr_path data/ehr --cxr_path data/cxr --task in-hospital-mortality,length-of-stay,decompensation,phenotyping,readmission,diagnosis --epochs 25 --lr 0.0001 --device {gpu id} --seed {40,42,44,46,48}
 ``
+
+Citation
+----
+```
+@inproceedings{xu2024flexcare,
+  title={FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction},
+  author={Xu, Muhao and Zhu, Zhenfeng and Li, Youru and Zheng, Shuai and Zhao, Yawei and He, Kunlun and Zhao, Yao},
+  booktitle={Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
+  pages={3610--3620},
+  year={2024}
+}
+```

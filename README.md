@@ -1,7 +1,7 @@
 # FlexCare
 Source code for ***FlexCare: Leveraging Cross-Task Synergy for Flexible Multimodal Healthcare Prediction*** published in KDD 2024.
 
-📄Paper is available at: <a href="https://arxiv.org/abs/2406.11928" target="_blank">ACM DL</a> or <a href="https://arxiv.org/abs/2406.11928" target="_blank">arXiv</a>
+📄Paper is available at: <a href="https://dl.acm.org/doi/abs/10.1145/3637528.3671974" target="_blank">ACM DL</a> or <a href="https://arxiv.org/abs/2406.11928" target="_blank">arXiv</a>
 
 ![image](pic/framework.png)
 
